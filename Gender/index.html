@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gender Identification Game</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(to top, #ff9a9e, #fad0c4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#logoScreen {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+#gameContainer {
+  width: 95%;
+  max-width: 420px;
+  text-align: center;
+}
+
+h2 {
+  font-size: 22px;
+}
+
+.word {
+  padding: 15px;
+  background: white;
+  border-radius: 10px;
+  margin: 20px auto;
+  font-size: 24px;
+  width: 70%;
+}
+
+.dropzones {
+  display: flex;
+  justify-content: space-around;
+}
+
+.zone {
+  width: 120px;
+  height: 120px;
+  background: #fff;
+  border-radius: 10px;
+  border: 2px dashed #555;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+}
+
+.draggables {
+  margin-top: 20px;
+}
+
+.drag {
+  display: inline-block;
+  padding: 10px 20px;
+  margin: 10px;
+  background: #fff;
+  border-radius: 10px;
+  cursor: grab;
+  font-size: 18px;
+}
+
+button {
+  padding: 12px 18px;
+  margin: 8px;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  background: #ff758c;
+  color: white;
+}
+
+#feedback {
+  font-size: 18px;
+  margin-top: 10px;
+}
+
+#timer {
+  font-size: 16px;
+}
+
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: yellow;
+  animation: fall 1s linear;
+}
+
+@keyframes fall {
+  to { transform: translateY(500px); opacity: 0; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGO SCREEN -->
+<div id="logoScreen">
+  <img src="../assets/birla-logo.png" width="200">
+</div>
+
+<div id="gameContainer" style="display:none;">
+  <h2>🎯 Gender Game</h2>
+  <div id="timer">⏱ Time: 0s</div>
+
+  <div class="word" id="wordBox"></div>
+
+  <div class="dropzones">
+    <div class="zone" data-value="masculine">👦 Masculine</div>
+    <div class="zone" data-value="feminine">👧 Feminine</div>
+  </div>
+
+  <div class="draggables">
+    <div class="drag" draggable="true" data-value="masculine">Boy</div>
+    <div class="drag" draggable="true" data-value="feminine">Girl</div>
+  </div>
+
+  <div id="feedback"></div>
+
+  <button onclick="resetGame()">🔄 Reset</button>
+  <button onclick="restartGame()">🔁 Restart</button>
+</div>
+
+<audio id="clapSound" src="https://www.soundjay.com/human/applause-8.mp3"></audio>
+
+<script>
+const questions = [
+  {word: "King", answer: "masculine", hint: "👑 A male ruler"},
+  {word: "Queen", answer: "feminine", hint: "👑 A female ruler"},
+  {word: "Boy", answer: "masculine", hint: "👦 Young male"},
+  {word: "Girl", answer: "feminine", hint: "👧 Young female"},
+  {word: "Lion", answer: "masculine", hint: "🦁 Male animal"},
+  {word: "Lioness", answer: "feminine", hint: "🦁 Female lion"},
+  {word: "Father", answer: "masculine", hint: "👨 Male parent"},
+  {word: "Mother", answer: "feminine", hint: "👩 Female parent"},
+  {word: "Actor", answer: "masculine", hint: "🎭 Male performer"},
+  {word: "Actress", answer: "feminine", hint: "🎭 Female performer"}
+];
+
+let shuffled = [];
+let index = 0;
+let time = 0;
+let timerInterval;
+
+function shuffle(array) {
+  return array.sort(() => Math.random() - 0.5);
+}
+
+function startGame() {
+  shuffled = shuffle([...questions]);
+  index = 0;
+  loadQuestion();
+
+  timerInterval = setInterval(() => {
+    time++;
+    document.getElementById("timer").innerText = "⏱ Time: " + time + "s";
+  }, 1000);
+}
+
+function loadQuestion() {
+  if (index >= shuffled.length) {
+    document.getElementById("feedback").innerHTML = "🎉 Game Over!";
+    return;
+  }
+  document.getElementById("wordBox").innerText = shuffled[index].word;
+  document.getElementById("feedback").innerText = "";
+}
+
+document.querySelectorAll(".drag").forEach(d => {
+  d.addEventListener("dragstart", e => {
+    e.dataTransfer.setData("value", d.dataset.value);
+  });
+});
+
+document.querySelectorAll(".zone").forEach(z => {
+  z.addEventListener("dragover", e => e.preventDefault());
+
+  z.addEventListener("drop", e => {
+    let val = e.dataTransfer.getData("value");
+    checkAnswer(val);
+  });
+});
+
+function checkAnswer(val) {
+  let correct = shuffled[index].answer;
+
+  if (val === correct) {
+    showConfetti();
+    document.getElementById("clapSound").play();
+    document.getElementById("feedback").innerText = "✅ Correct!";
+    setTimeout(() => {
+      index++;
+      loadQuestion();
+    }, 3000);
+  } else {
+    document.getElementById("feedback").innerText =
+      "❌ Try again! Hint: " + shuffled[index].hint;
+  }
+}
+
+function showConfetti() {
+  for (let i = 0; i < 20; i++) {
+    let c = document.createElement("div");
+    c.className = "confetti";
+    c.style.left = Math.random() * window.innerWidth + "px";
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 1000);
+  }
+}
+
+function resetGame() {
+  loadQuestion();
+}
+
+function restartGame() {
+  time = 0;
+  clearInterval(timerInterval);
+  startGame();
+}
+
+// Logo delay
+setTimeout(() => {
+  document.getElementById("logoScreen").style.display = "none";
+  document.getElementById("gameContainer").style.display = "block";
+  startGame();
+}, 2000);
+
+</script>
+
+</body>
+</html>
